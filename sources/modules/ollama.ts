@@ -30,7 +30,7 @@ export async function ollamaInference(args: {
             });
         }
 
-        let resp = await axios.post(keys.ollana, {
+        let resp = await axios.post(keys.ollama, {
             stream: false,
             model: args.model,
             messages: converted,

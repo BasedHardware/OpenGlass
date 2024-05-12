@@ -12,7 +12,7 @@ export function useDevice(): [BluetoothRemoteGATTServer | null, () => Promise<vo
 
             // Connect to device
             let connected = await navigator.bluetooth.requestDevice({
-                filters: [{ name: 'Bubble ESP' }],
+                filters: [{ name: 'OpenGlass' }],
                 optionalServices: ['19B10000-E8F2-537E-4F6C-D104768A1214'.toLowerCase()],
             });
 

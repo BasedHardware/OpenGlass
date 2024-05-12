@@ -2,7 +2,7 @@ import axios from "axios";
 import { keys } from "../keys";
 
 const headers = {
-    'Authorization': `Bearer ${keys.grok}`
+    'Authorization': `Bearer ${keys.groq}`
 };
 
 export async function groqRequest(systemPrompt: string, userPrompt: string) {

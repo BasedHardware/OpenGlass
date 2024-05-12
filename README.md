@@ -1,6 +1,6 @@
 ## OpenGlass - Open Source Smart Glasses
 
-Turn any glasses into hackable smart glasses with off-the shelf components. Record your life, remember people you meet, identify objects, translate text, and more. 
+Turn any glasses into hackable smart glasses with less than $25 of off-the shelf components. Record your life, remember people you meet, identify objects, translate text, and more. 
 
 ### Video demo
 
@@ -16,6 +16,7 @@ https://forms.gle/K1dtrn1mPrMBsQZC9
 2. Run with `npm start`. Note this is an expo project, for now just open the localhost link to access the web version.
 
 ### Hardware
+
 1x Seeed Studio XIAO ESP32 S3 Sense - https://www.amazon.com/dp/B0C69FFVHH/ref=dp_iou_view_item?ie=UTF8&psc=1
 
 1x EEMB LP502030 3.7v 250mAH battery - https://www.amazon.com/EEMB-Battery-Rechargeable-Lithium-Connector/dp/B08VRZTHDL

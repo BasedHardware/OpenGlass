@@ -49,7 +49,7 @@ class MessageHandler: public BLECharacteristicCallbacks
 };
 
 void configure_ble() {
-  BLEDevice::init("Bubble ESP");
+  BLEDevice::init("OpenGlass");
   BLEServer *server = BLEDevice::createServer();
   BLEService *service = server->createService(serviceUUID);
 

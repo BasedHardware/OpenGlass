@@ -1,5 +1,5 @@
 export const keys = {
     grok: '',
-    ollana: '',
+    ollama: '',
     openai: ''
 };

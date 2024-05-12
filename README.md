@@ -29,7 +29,7 @@ https://forms.gle/K1dtrn1mPrMBsQZC9
 
 ### Getting started
 
-1. Install firmware on the Seeed Studio XIAO
+1. [Install firmware](https://github.com/BasedHardware/openglass/tree/main/firmware) on the Seeed Studio XIAO
 
 2. 3D print your case
 

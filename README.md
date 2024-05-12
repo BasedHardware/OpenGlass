@@ -11,6 +11,10 @@ https://youtu.be/DsM_-c2e1ew
 We will ship a limited number of pre-built kits. 
 https://forms.gle/K1dtrn1mPrMBsQZC9
 
+### Software
+1. Git clone and install with `npm install`
+2. Run with `npm start`. Note this is an expo project, for now just open the localhost link to access the web version.
+
 ### Hardware
 1x Seeed Studio XIAO ESP32 S3 Sense - https://www.amazon.com/dp/B0C69FFVHH/ref=dp_iou_view_item?ie=UTF8&psc=1
 

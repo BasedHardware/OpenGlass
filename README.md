@@ -13,6 +13,10 @@ https://youtu.be/DsM_-c2e1ew
 We will ship a limited number of pre-built kits. 
 https://forms.gle/K1dtrn1mPrMBsQZC9
 
+### Community (Setup questions, contribution guide, etc)
+
+Join the [Based Hardware Discord](https://discord.com/invite/ZutWMTJnwA)
+
 ### Software
 1. Git clone and install with `npm install`
 2. Run with `npm start`. Note this is an expo project, for now just open the localhost link to access the web version.

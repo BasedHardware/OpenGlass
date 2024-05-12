@@ -54,7 +54,7 @@ Follow these steps to set up OpenGlass:
    npm install
    ```
 
-2. Add API keys for Grok and OpenAI in the `keys.ts` file located at https://github.com/BasedHardware/OpenGlass/blob/main/sources/keys.ts.
+2. Add API keys for groq and OpenAI in the `keys.ts` file located at https://github.com/BasedHardware/OpenGlass/blob/main/sources/keys.ts.
 
 3. For Ollama, self-host the REST API from the repository at https://github.com/ollama/ollama and add the URL to the `keys.ts` file.
 

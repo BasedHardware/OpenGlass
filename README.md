@@ -73,7 +73,7 @@ Follow these steps to set up OpenGlass:
    yarn start
    ```
    
-   Note: This is an Expo project. For now, open the localhost link to access the web version.
+   Note: This is an Expo project. For now, open the localhost link (this will appear after completing step 5) to access the web version.
 
 ## License
 

@@ -40,7 +40,11 @@ Follow these steps to set up OpenGlass:
      - On top of the Arduino IDE, select the port (likely to be COM3 or higher).
      - Search for `xiao` in the development board on the left and select `XIAO_ESP32S3`.
 
-5. Upload the firmware to the XIAO ESP32S3 board.
+5. Before you flash go to the "Tools" drop down in the Arduino IDE and make sure you set "PSRAM:" to be "PSRAM: "OPI PSRAM"
+
+![Like this](image.png)
+
+6. Upload the firmware to the XIAO ESP32S3 board.
 
 ### Software
 

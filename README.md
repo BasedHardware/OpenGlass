@@ -44,7 +44,7 @@ Follow these steps to set up OpenGlass:
 
 ![Like this](image.png)
 
-5. Upload the firmware to the XIAO ESP32S3 board.
+6. Upload the firmware to the XIAO ESP32S3 board.
 
 ### Software
 

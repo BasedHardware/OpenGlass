@@ -2,7 +2,8 @@
 
 Turn any glasses into hackable smart glasses with less than $25 of off-the-shelf components. Record your life, remember people you meet, identify objects, translate text, and more.
 
-![OpenGlass](https://github.com/BasedHardware/openglass/assets/1193692/d42364e2-78f6-41ff-845f-dba2052b2f3c)
+![OpenGlass](![d6ee27bff69c81ddeb1473f537bcd449](https://github.com/BasedHardware/OpenGlass/assets/43514161/2fdc9d9d-2206-455c-ba60-10dbd6fb3dfb)
+)
 
 ## Video Demo
 

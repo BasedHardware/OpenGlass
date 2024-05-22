@@ -72,6 +72,10 @@ export async function describeImage(imagePath: string) {
 }
 
 export async function gptRequest(systemPrompt: string, userPrompt: string) {
+     const headers = {
+        'Authorization': `Bearer ${keys.openai}`,
+        'Content-Type': 'application/json'
+    };
     try {
         const response = await axios.post("https://api.openai.com/v1/chat/completions", {
             model: "gpt-4o",
@@ -79,8 +83,8 @@ export async function gptRequest(systemPrompt: string, userPrompt: string) {
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt },
             ],
-        });
-        return response.data;
+        },{headers});
+        return response.data.choices[0].message.content;
     } catch (error) {
         console.error("Error in gptRequest:", error);
         return null; // or handle error differently

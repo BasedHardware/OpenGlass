@@ -32,6 +32,7 @@ Follow these steps to set up OpenGlass:
 
 3. Open the [firmware folder](https://github.com/BasedHardware/openglass/tree/main/firmware) and open the `.ino` file in the Arduino IDE.
    - If you don't have the Arduino IDE installed, download and install it from the [official website](https://www.arduino.cc/en/software).
+   - Alternatively, follow the steps in the [firmware readme](firmware/readme.md) to build using `arduino-cli`
 
 4. Follow the software preparation steps to set up the Arduino IDE for the XIAO ESP32S3 board:
    - Add ESP32 board package to your Arduino IDE:
@@ -73,7 +74,7 @@ Follow these steps to set up OpenGlass:
    ```
    yarn start
    ```
-   
+
    Note: This is an Expo project. For now, open the localhost link (this will appear after completing step 5) to access the web version.
 
 ## License

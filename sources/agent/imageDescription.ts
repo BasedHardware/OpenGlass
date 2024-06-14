@@ -5,7 +5,7 @@ import { gptRequest } from "../modules/openai";
 
 export async function imageDescription(src: Uint8Array, model?: KnownModel): Promise<string> {
     return ollamaInference({
-        model: model || 'moondream:1.8b-v2-moondream2-text-model-f16',
+        model: model || 'moondream:1.8b-v2-fp16',
         messages: [{
             role: 'system',
             content: 'You are a very advanced model and your task is to describe the image as precisely as possible. Transcribe any text you see.'

@@ -3,9 +3,9 @@ import { groqRequest } from "../modules/groq-llama3";
 import { gptRequest } from "../modules/openai";
 
 
-export async function imageDescription(src: Uint8Array, model?: KnownModel): Promise<string> {
+export async function imageDescription(src: Uint8Array, model: KnownModel = 'moondream:1.8b-v2-fp16'): Promise<string> {
     return ollamaInference({
-        model: model || 'moondream:1.8b-v2-fp16',
+        model: model,
         messages: [{
             role: 'system',
             content: 'You are a very advanced model and your task is to describe the image as precisely as possible. Transcribe any text you see.'
@@ -14,14 +14,14 @@ export async function imageDescription(src: Uint8Array, model?: KnownModel): Pro
             content: 'Describe the scene',
             images: [src],
         }]
-    }); 
+    });
 }
 
 export async function llamaFind(question: string, images: string): Promise<string> {
     return groqRequest(
              `
-                You are a smart AI that need to read through description of a images and answer user's questions. 
-                
+                You are a smart AI that need to read through description of a images and answer user's questions.
+
                 This are the provided images:
                 ${images}
 
@@ -30,7 +30,7 @@ export async function llamaFind(question: string, images: string): Promise<strin
                 ONLY use the information in the description of the images to answer the question.
                 BE concise and specific.
             `
-        , 
+        ,
             question
     );
 }
@@ -38,8 +38,8 @@ export async function llamaFind(question: string, images: string): Promise<strin
 export async function openAIFind(question: string, images: string): Promise<string> {
     return gptRequest(
              `
-                You are a smart AI that need to read through description of a images and answer user's questions. 
-                
+                You are a smart AI that need to read through description of a images and answer user's questions.
+
                 This are the provided images:
                 ${images}
 
@@ -48,7 +48,7 @@ export async function openAIFind(question: string, images: string): Promise<stri
                 ONLY use the information in the description of the images to answer the question.
                 BE concise and specific.
             `
-        , 
+        ,
             question
     );
 }

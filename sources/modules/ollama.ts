@@ -37,5 +37,5 @@ export async function ollamaInference(args: {
         });
         return resp.data;
     });
-    return trimIdent((response.message.content as string));
+    return trimIdent(((response.message?.content ?? '') as string));
 }

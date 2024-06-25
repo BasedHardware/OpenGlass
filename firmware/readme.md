@@ -10,13 +10,11 @@ arduino-cli core install esp32:esp32@2.0.17
 ### Get board details
 
 On Windows 11 board should be showing as ```esp32:esp32:XIAO_ESP32S3```
-but instead shows as ```esp32:esp32:nora_w10```
-
-If the board is showing as ```esp32:esp32:XIAO_ESP32S3``` modify the commands below
+but instead might show show as ```esp32:esp32:nora_w10``` or ```esp32:esp32:wifiduino32c3```
 
 ```bash
 arduino-cli board list
-arduino-cli board details -b esp32:esp32:nora_w10
+arduino-cli board details -b esp32:esp32:XIAO_ESP32S3
 ```
 
 ### Compile and upload
@@ -24,5 +22,5 @@ arduino-cli board details -b esp32:esp32:nora_w10
 Change COM6 to the port name from the board list output
 
 ```bash
-arduino-cli compile -u -p COM6 -b esp32:esp32:nora_w10:PSRAM=opi
+arduino-cli compile -u -p COM6 -b esp32:esp32:XIAO_ESP32S3:PSRAM=opi
 ```

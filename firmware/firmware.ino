@@ -11,6 +11,29 @@
 #include "camera_pins.h"
 #include "mulaw.h"
 
+// Audio
+
+// Uncomment to build with support for Opus codec
+// #define OPUS_CODEC
+
+#ifdef OPUS_CODEC
+
+#include "OpusEncoder.h"
+
+#define CHANNELS 1
+#define FRAME_SIZE 160 // 20ms at 8kHz
+#define MAX_PACKET_SIZE 1000
+
+#define SAMPLE_RATE 16000
+#define SAMPLE_BITS 16
+
+#else
+
+#define SAMPLE_RATE 8000
+#define SAMPLE_BITS 16
+
+#endif
+
 //
 // BLE
 //
@@ -92,7 +115,11 @@ void configure_ble() {
     audioCodecUUID,
     BLECharacteristic::PROPERTY_READ
   );
-  uint8_t codecId = 11; // MuLaw 8mhz
+#ifdef OPUS_CODEC
+  uint8_t codecId = 20; // Opus 16khz
+#else
+  uint8_t codecId = 11; // MuLaw 8khz
+#endif
   codec->setValue(&codecId, 1);
 
   // Device Information Service
@@ -216,7 +243,7 @@ void configure_microphone() {
 
   // start I2S at 16 kHz with 16-bits per sample
   I2S.setAllPins(-1, 42, 41, -1, -1);
-  if (!I2S.begin(PDM_MONO_MODE, 8000, 16)) {
+  if (!I2S.begin(PDM_MONO_MODE, SAMPLE_RATE, SAMPLE_BITS)) {
     Serial.println("Failed to initialize I2S!");
     while (1); // do nothing
   }
@@ -302,6 +329,9 @@ void setup() {
   Serial.println("Starting BLE...");
   configure_ble();
   // s_compressed_frame_2 = (uint8_t *) ps_calloc(compressed_buffer_size, sizeof(uint8_t));
+#ifdef OPUS_CODEC
+  encoder.begin(SAMPLE_RATE, CHANNELS);
+#endif
   Serial.println("Starting Microphone...");
   configure_microphone();
   Serial.println("Starting Camera...");
@@ -321,18 +351,42 @@ void loop() {
   size_t bytes_recorded = read_microphone();
 
   // Push to BLE
-  if (bytes_recorded > 0 && connected) {
-    size_t out_buffer_size = bytes_recorded / 2 + 3;
+  if (bytes_recorded > 0 && connected)
+  {
+#ifdef OPUS_CODEC
+    // Convert to 16-bit samples
+    int16_t samples[FRAME_SIZE];
+    for (size_t i = 0; i < bytes_recorded; i += 2)
+    {
+      samples[i / 2] = ((s_recording_buffer[i + 1] << 8) | s_recording_buffer[i]) << VOLUME_GAIN;
+    }
+
+    // Encode with Opus
+    int encoded_bytes = encoder.encode(samples, FRAME_SIZE, &s_compressed_frame[3], MAX_PACKET_SIZE - 3);
+
+    if (encoded_bytes > 0)
+    {
+      size_t out_buffer_size = encoded_bytes / 2 + 3;
+#else
     for (size_t i = 0; i < bytes_recorded; i += 2) {
       int16_t sample = ((s_recording_buffer[i + 1] << 8) | s_recording_buffer[i]) << VOLUME_GAIN;
       s_compressed_frame[i / 2 + 3] = linear2ulaw(sample);
     }
+
+    int encoded_bytes = bytes_recorded / 2;
+#endif
+
     s_compressed_frame[0] = frame_count & 0xFF;
     s_compressed_frame[1] = (frame_count >> 8) & 0xFF;
     s_compressed_frame[2] = 0;
+
+    size_t out_buffer_size = encoded_bytes + 3;
     audio->setValue(s_compressed_frame, out_buffer_size);
     audio->notify();
     frame_count++;
+#ifdef OPUS_CODEC
+    }
+#endif
   }
 
   // Take a photo

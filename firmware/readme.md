@@ -19,8 +19,8 @@ arduino-cli board details -b esp32:esp32:XIAO_ESP32S3
 
 ### Compile and upload
 
-Change COM6 to the port name from the board list output
+Change COM5 to the port name from the board list output
 
 ```bash
-arduino-cli compile -u -p COM6 -b esp32:esp32:XIAO_ESP32S3:PSRAM=opi
+arduino-cli compile --build-path build --output-dir dist -e -u -p COM5 -b esp32:esp32:XIAO_ESP32S3:PSRAM=opi
 ```

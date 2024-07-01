@@ -233,8 +233,13 @@ bool take_photo() {
 
 #define VOLUME_GAIN 2
 
+#ifdef OPUS_CODEC
+static size_t recording_buffer_size = FRAME_SIZE * 2; // 16-bit samples
+static size_t compressed_buffer_size = MAX_PACKET_SIZE;
+#else
 static size_t recording_buffer_size = 400;
 static size_t compressed_buffer_size = 400 + 3; /* header */
+#endif
 static uint8_t *s_recording_buffer = nullptr;
 static uint8_t *s_compressed_frame = nullptr;
 static uint8_t *s_compressed_frame_2 = nullptr;
@@ -330,7 +335,12 @@ void setup() {
   configure_ble();
   // s_compressed_frame_2 = (uint8_t *) ps_calloc(compressed_buffer_size, sizeof(uint8_t));
 #ifdef OPUS_CODEC
-  encoder.begin(SAMPLE_RATE, CHANNELS);
+  if (!encoder.begin(SAMPLE_RATE, CHANNELS))
+  {
+    Serial.println("Failed to initialize Opus encoder!");
+    while (1)
+      ; // do nothing
+  }
 #endif
   Serial.println("Starting Microphone...");
   configure_microphone();

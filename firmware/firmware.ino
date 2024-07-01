@@ -216,7 +216,7 @@ void configure_microphone() {
 
   // start I2S at 16 kHz with 16-bits per sample
   I2S.setAllPins(-1, 42, 41, -1, -1);
-  if (!I2S.begin(PDM_MONO_MODE, 16000, 16)) {
+  if (!I2S.begin(PDM_MONO_MODE, 8000, 16)) {
     Serial.println("Failed to initialize I2S!");
     while (1); // do nothing
   }

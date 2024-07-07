@@ -14,24 +14,32 @@
 // Audio
 
 // Uncomment to build with support for Opus codec
-// #define OPUS_CODEC
+// #define CODEC_OPUS
+// #define CODEC_MULAW
+#define CODEC_PCM
 
-#ifdef OPUS_CODEC
+#ifdef CODEC_OPUS
 
-#include "OpusEncoder.h"
+#include <opus.h>
+
+#define OPUS_APPLICATION OPUS_APPLICATION_VOIP
+#define OPUS_BITRATE 16000
+
+OpusEncoder *opus_encoder = nullptr;
 
 #define CHANNELS 1
-#define FRAME_SIZE 160 // 20ms at 8kHz
 #define MAX_PACKET_SIZE 1000
 
 #define SAMPLE_RATE 16000
 #define SAMPLE_BITS 16
 
-#else
-
+#elif defined(CODEC_MULAW)
 #define SAMPLE_RATE 8000
 #define SAMPLE_BITS 16
-
+#else
+#define FRAME_SIZE 160
+#define SAMPLE_RATE 16000
+#define SAMPLE_BITS 16
 #endif
 
 //
@@ -115,10 +123,12 @@ void configure_ble() {
     audioCodecUUID,
     BLECharacteristic::PROPERTY_READ
   );
-#ifdef OPUS_CODEC
+#ifdef CODEC_OPUS
   uint8_t codecId = 20; // Opus 16khz
-#else
+#elif defined(CODEC_MULAW)
   uint8_t codecId = 11; // MuLaw 8khz
+#else
+  uint8_t codecId = 1; // PCM 8khz
 #endif
   codec->setValue(&codecId, 1);
 
@@ -231,14 +241,18 @@ bool take_photo() {
 // Microphone
 //
 
-#define VOLUME_GAIN 2
-
-#ifdef OPUS_CODEC
+#ifdef CODEC_OPUS
 static size_t recording_buffer_size = FRAME_SIZE * 2; // 16-bit samples
 static size_t compressed_buffer_size = MAX_PACKET_SIZE;
-#else
+#define VOLUME_GAIN 2
+#elif defined(CODEC_MULAW)
 static size_t recording_buffer_size = 400;
 static size_t compressed_buffer_size = 400 + 3; /* header */
+#define VOLUME_GAIN 2
+#else
+static size_t recording_buffer_size = FRAME_SIZE * 2; // 16-bit samples
+static size_t compressed_buffer_size = recording_buffer_size + 3; /* header */
+#define VOLUME_GAIN 4
 #endif
 static uint8_t *s_recording_buffer = nullptr;
 static uint8_t *s_compressed_frame = nullptr;
@@ -334,13 +348,16 @@ void setup() {
   Serial.println("Starting BLE...");
   configure_ble();
   // s_compressed_frame_2 = (uint8_t *) ps_calloc(compressed_buffer_size, sizeof(uint8_t));
-#ifdef OPUS_CODEC
-  if (!encoder.begin(SAMPLE_RATE, CHANNELS))
+#ifdef CODEC_OPUS
+  int opus_err;
+  opus_encoder = opus_encoder_create(SAMPLE_RATE, CHANNELS, OPUS_APPLICATION, &opus_err);
+  if (opus_err != OPUS_OK || !opus_encoder)
   {
-    Serial.println("Failed to initialize Opus encoder!");
+    Serial.println("Failed to create Opus encoder!");
     while (1)
       ; // do nothing
   }
+  opus_encoder_ctl(opus_encoder, OPUS_SET_BITRATE(OPUS_BITRATE));
 #endif
   Serial.println("Starting Microphone...");
   configure_microphone();
@@ -363,24 +380,31 @@ void loop() {
   // Push to BLE
   if (bytes_recorded > 0 && connected)
   {
-#ifdef OPUS_CODEC
-    // Convert to 16-bit samples
+#ifdef CODEC_OPUS
     int16_t samples[FRAME_SIZE];
     for (size_t i = 0; i < bytes_recorded; i += 2)
     {
       samples[i / 2] = ((s_recording_buffer[i + 1] << 8) | s_recording_buffer[i]) << VOLUME_GAIN;
     }
 
-    // Encode with Opus
-    int encoded_bytes = encoder.encode(samples, FRAME_SIZE, &s_compressed_frame[3], MAX_PACKET_SIZE - 3);
+    int encoded_bytes = opus_encode(opus_encoder, samples, FRAME_SIZE, &s_compressed_frame[3], MAX_PACKET_SIZE - 3);
 
     if (encoded_bytes > 0)
     {
-      size_t out_buffer_size = encoded_bytes / 2 + 3;
-#else
-    for (size_t i = 0; i < bytes_recorded; i += 2) {
+#elif defined(CODEC_MULAW)
+    for (size_t i = 0; i < bytes_recorded; i += 2)
+    {
       int16_t sample = ((s_recording_buffer[i + 1] << 8) | s_recording_buffer[i]) << VOLUME_GAIN;
       s_compressed_frame[i / 2 + 3] = linear2ulaw(sample);
+    }
+
+    int encoded_bytes = bytes_recorded / 2;
+#else
+    for (size_t i = 0; i < bytes_recorded / 4; i++)
+    {
+      int16_t sample = ((int16_t *)s_recording_buffer)[i * 2] << VOLUME_GAIN; // Read every other 16-bit sample
+      s_compressed_frame[i * 2 + 3] = sample & 0xFF;           // Low byte
+      s_compressed_frame[i * 2 + 4] = (sample >> 8) & 0xFF;    // High byte
     }
 
     int encoded_bytes = bytes_recorded / 2;
@@ -394,52 +418,52 @@ void loop() {
     audio->setValue(s_compressed_frame, out_buffer_size);
     audio->notify();
     frame_count++;
-#ifdef OPUS_CODEC
+#ifdef CODEC_OPUS
     }
 #endif
   }
 
   // Take a photo
   unsigned long now = millis();
-  if ((now - lastCaptureTime) >= 5000 && !need_send_photo && connected) {
-    if (take_photo()) {
-      need_send_photo = true;
-      sent_photo_bytes = 0;
-      sent_photo_frames = 0;
-      lastCaptureTime = now;
-    }
-  }
+  // if ((now - lastCaptureTime) >= 5000 && !need_send_photo && connected) {
+  //   if (take_photo()) {
+  //     need_send_photo = true;
+  //     sent_photo_bytes = 0;
+  //     sent_photo_frames = 0;
+  //     lastCaptureTime = now;
+  //   }
+  // }
 
   // Push to BLE
-  if (need_send_photo) {
-    size_t remaining = fb->len - sent_photo_bytes;
-    if (remaining > 0) {
-      // Populate buffer
-      s_compressed_frame_2[0] = sent_photo_frames & 0xFF;
-      s_compressed_frame_2[1] = (sent_photo_frames >> 8) & 0xFF;
-      size_t bytes_to_copy = remaining;
-      if (bytes_to_copy > 200) {
-        bytes_to_copy = 200;
-      }
-      memcpy(&s_compressed_frame_2[2], &fb->buf[sent_photo_bytes], bytes_to_copy);
+  // if (need_send_photo) {
+  //   size_t remaining = fb->len - sent_photo_bytes;
+  //   if (remaining > 0) {
+  //     // Populate buffer
+  //     s_compressed_frame_2[0] = sent_photo_frames & 0xFF;
+  //     s_compressed_frame_2[1] = (sent_photo_frames >> 8) & 0xFF;
+  //     size_t bytes_to_copy = remaining;
+  //     if (bytes_to_copy > 200) {
+  //       bytes_to_copy = 200;
+  //     }
+  //     memcpy(&s_compressed_frame_2[2], &fb->buf[sent_photo_bytes], bytes_to_copy);
 
-      // Push to BLE
-      photo->setValue(s_compressed_frame_2, bytes_to_copy + 2);
-      photo->notify();
-      sent_photo_bytes += bytes_to_copy;
-      sent_photo_frames++;
-    } else {
+  //     // Push to BLE
+  //     photo->setValue(s_compressed_frame_2, bytes_to_copy + 2);
+  //     photo->notify();
+  //     sent_photo_bytes += bytes_to_copy;
+  //     sent_photo_frames++;
+  //   } else {
 
-      // End flag
-      s_compressed_frame_2[0] = 0xFF;
-      s_compressed_frame_2[1] = 0xFF;
-      photo->setValue(s_compressed_frame_2, 2);
-      photo->notify();
+  //     // End flag
+  //     s_compressed_frame_2[0] = 0xFF;
+  //     s_compressed_frame_2[1] = 0xFF;
+  //     photo->setValue(s_compressed_frame_2, 2);
+  //     photo->notify();
 
-      Serial.println("Photo sent");
-      need_send_photo = false;
-    }
-  }
+  //     Serial.println("Photo sent");
+  //     need_send_photo = false;
+  //   }
+  // }
 
   if (millis() - lastBatteryUpdate > 60000)
   {

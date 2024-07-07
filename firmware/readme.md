@@ -25,7 +25,7 @@ Change COM5 to the port name from the board list output
 arduino-cli compile --build-path build --output-dir dist -e -u -p COM5 -b esp32:esp32:XIAO_ESP32S3:PSRAM=opi
 ```
 
-### Opus library
+### Opus support
 
 Go to your Arduino libraries folder.
 
@@ -37,8 +37,9 @@ arduino-cli config get directories.user
 
 Note: You have to add ```/libraries``` to the path to get the libraries folder.
 
-Then clone the library:
+Then clone the two libraries needed to add Opus support:
 
 ```bash
 git clone https://github.com/pschatzmann/arduino-libopus.git
+git clone https://github.com/pschatzmann/arduino-audio-tools.git
 ```

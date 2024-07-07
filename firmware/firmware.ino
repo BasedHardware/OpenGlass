@@ -252,7 +252,7 @@ static size_t compressed_buffer_size = 400 + 3; /* header */
 #else
 static size_t recording_buffer_size = FRAME_SIZE * 2; // 16-bit samples
 static size_t compressed_buffer_size = recording_buffer_size + 3; /* header */
-#define VOLUME_GAIN 4
+#define VOLUME_GAIN 2
 #endif
 static uint8_t *s_recording_buffer = nullptr;
 static uint8_t *s_compressed_frame = nullptr;

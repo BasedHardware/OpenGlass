@@ -95,7 +95,9 @@ bool photoDataUploading = false;
 uint8_t batteryLevel = 100;
 unsigned long lastBatteryUpdate = 0;
 
-class ServerHandler: public BLEServerCallbacks
+void handlePhotoControl(int8_t controlValue);
+
+class ServerHandler : public BLEServerCallbacks
 {
   void onConnect(BLEServer *server)
   {

@@ -11,7 +11,7 @@
 
 // Audio
 
-// Uncomment to to switch the codec
+// Uncomment to switch the codec
 // Opus is still under development
 // Mulaw is used with the web app
 // PCM is used with the Friend app
@@ -72,11 +72,11 @@ static BLEUUID audioCodecUUID("19B10002-E8F2-537E-4F6C-D104768A1214");
 static BLEUUID photoDataUUID("19B10005-E8F2-537E-4F6C-D104768A1214");
 static BLEUUID photoControlUUID("19B10006-E8F2-537E-4F6C-D104768A1214");
 
-BLECharacteristic *audioData;
-BLECharacteristic *photoData;
-BLECharacteristic *photoControl;
+BLECharacteristic *audioDataCharacteristic;
+BLECharacteristic *photoDataCharacteristic;
+BLECharacteristic *photoControlCharacteristic;
 
-BLECharacteristic *pBatteryLevelCharacteristic;
+BLECharacteristic *batteryLevelCharacteristic;
 
 // State
 
@@ -113,23 +113,13 @@ class ServerHandler : public BLEServerCallbacks
   }
 };
 
-class MessageHandler : public BLECharacteristicCallbacks
-{
-  void onWrite(BLECharacteristic* pCharacteristic, esp_ble_gatts_cb_param_t* param)
-  {
-    // Currently unused
-  }
-};
-
 class PhotoControlCallback : public BLECharacteristicCallbacks
 {
   void onWrite(BLECharacteristic *characteristic)
   {
-    std::string value = characteristic->getValue();
-    if (value.length() == 1)
+    if (characteristic->getLength() == 1)
     {
-      int8_t controlValue = value[0];
-      handlePhotoControl(controlValue);
+      handlePhotoControl(characteristic->getData()[0]);
     }
   }
 };
@@ -143,18 +133,17 @@ void configure_ble() {
   BLEService *service = server->createService(serviceUUID);
 
   // Audio characteristics
-  audioData = service->createCharacteristic(
+  audioDataCharacteristic = service->createCharacteristic(
     audioDataUUID,
     BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
   );
   BLE2902 *ccc = new BLE2902();
   ccc->setNotifications(true);
-  audioData->addDescriptor(ccc);
+  audioDataCharacteristic->addDescriptor(ccc);
 
-  BLECharacteristic *audioCodec = service->createCharacteristic(
+  BLECharacteristic *audioCodecCharacteristic = service->createCharacteristic(
     audioCodecUUID,
-    BLECharacteristic::PROPERTY_READ
-  );
+    BLECharacteristic::PROPERTY_READ);
 #ifdef CODEC_OPUS
   uint8_t codecId = 20; // Opus 16khz
 #else
@@ -164,50 +153,57 @@ void configure_ble() {
   uint8_t codecId = 1; // PCM 8khz
 #endif
 #endif
-  audioCodec->setValue(&codecId, 1);
+  audioCodecCharacteristic->setValue(&codecId, 1);
 
   // Photo characteristics
 
-  photoData = service->createCharacteristic(
+  photoDataCharacteristic = service->createCharacteristic(
       photoDataUUID,
       BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
   ccc = new BLE2902();
   ccc->setNotifications(true);
-  photoData->addDescriptor(ccc);
+  photoDataCharacteristic->addDescriptor(ccc);
 
-  BLECharacteristic *photoControl = service->createCharacteristic(
+  BLECharacteristic *photoControlCharacteristic = service->createCharacteristic(
       photoControlUUID,
-      BLECharacteristic::PROPERTY_WRITE);
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_WRITE);
+  ccc = new BLE2902();
+  ccc->setNotifications(true);
+  photoControlCharacteristic->addDescriptor(ccc);
+  photoControlCharacteristic->setCallbacks(new PhotoControlCallback());
+  uint8_t controlValue = 0;
+  photoControlCharacteristic->setValue(&controlValue, 1);
 
-  photoControl->setCallbacks(new PhotoControlCallback());
+      // Device Information Service
 
-  // Device Information Service
-
-  BLEService *deviceInfoService = server->createService(DEVICE_INFORMATION_SERVICE_UUID);
-  BLECharacteristic *pManufacturerNameCharacteristic = deviceInfoService->createCharacteristic(
+      BLEService *deviceInfoService = server->createService(DEVICE_INFORMATION_SERVICE_UUID);
+  BLECharacteristic *manufacturerNameCharacteristic = deviceInfoService->createCharacteristic(
       MANUFACTURER_NAME_STRING_CHAR_UUID,
       BLECharacteristic::PROPERTY_READ);
-  BLECharacteristic *pModelNumberCharacteristic = deviceInfoService->createCharacteristic(
+  BLECharacteristic *modelNumberCharacteristic = deviceInfoService->createCharacteristic(
       MODEL_NUMBER_STRING_CHAR_UUID,
       BLECharacteristic::PROPERTY_READ);
-  BLECharacteristic *pFirmwareRevisionCharacteristic = deviceInfoService->createCharacteristic(
+  BLECharacteristic *firmwareRevisionCharacteristic = deviceInfoService->createCharacteristic(
       FIRMWARE_REVISION_STRING_CHAR_UUID,
       BLECharacteristic::PROPERTY_READ);
-  BLECharacteristic *pHardwareRevisionCharacteristic = deviceInfoService->createCharacteristic(
+  BLECharacteristic *hardwareRevisionCharacteristic = deviceInfoService->createCharacteristic(
       HARDWARE_REVISION_STRING_CHAR_UUID,
       BLECharacteristic::PROPERTY_READ);
 
-  pManufacturerNameCharacteristic->setValue("Based Hardware");
-  pModelNumberCharacteristic->setValue("OpenGlass");
-  pFirmwareRevisionCharacteristic->setValue("1.0.1");
-  pHardwareRevisionCharacteristic->setValue("Seeed Xiao ESP32S3 Sense");
+  manufacturerNameCharacteristic->setValue("Based Hardware");
+  modelNumberCharacteristic->setValue("OpenGlass");
+  firmwareRevisionCharacteristic->setValue("1.0.1");
+  hardwareRevisionCharacteristic->setValue("Seeed Xiao ESP32S3 Sense");
 
   // Battery Service
   BLEService *batteryService = server->createService(BATTERY_SERVICE_UUID);
-  pBatteryLevelCharacteristic = batteryService->createCharacteristic(
+  batteryLevelCharacteristic = batteryService->createCharacteristic(
       BATTERY_LEVEL_CHAR_UUID,
       BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  pBatteryLevelCharacteristic->addDescriptor(new BLE2902());
+  ccc = new BLE2902();
+  ccc->setNotifications(true);
+  batteryLevelCharacteristic->addDescriptor(ccc);
+  batteryLevelCharacteristic->setValue(&batteryLevel, 1);
 
   // Start the services
   service->start();
@@ -372,8 +368,8 @@ void configure_camera() {
 void updateBatteryLevel()
 {
   // TODO:
-  pBatteryLevelCharacteristic->setValue(&batteryLevel, 1);
-  pBatteryLevelCharacteristic->notify();
+  batteryLevelCharacteristic->setValue(&batteryLevel, 1);
+  batteryLevelCharacteristic->notify();
 }
 
 //
@@ -409,9 +405,13 @@ void setup() {
 
 void loop() {
 
+  Serial.println("Loop");
+
+  Serial.println("Read microphone...");
   // Read from mic
   size_t bytes_recorded = read_microphone();
 
+  Serial.println("Push audio data to BLE...");
   // Push to BLE
   if (bytes_recorded > 0 && connected)
   {
@@ -452,31 +452,39 @@ void loop() {
     s_compressed_frame[2] = 0;
 
     size_t out_buffer_size = encoded_bytes + 3;
-    audioData->setValue(s_compressed_frame, out_buffer_size);
-    audioData->notify();
+    audioDataCharacteristic->setValue(s_compressed_frame, out_buffer_size);
+    audioDataCharacteristic->notify();
     audio_frame_count++;
 #ifdef CODEC_OPUS
     }
 #endif
   }
 
+  Serial.println("Check photo capture...");
   // Take a photo
   unsigned long now = millis();
 
   // Don't take a photo if we are already sending data for previous photo
   if (isCapturingPhotos && !photoDataUploading && connected)
   {
+    Serial.println("Taking photo...");
     if ((captureInterval == 0)
       || ((now - lastCaptureTime) >= captureInterval))
     {
+      Serial.println("Capture interval reached");
       if (captureInterval == 0) {
+        Serial.println("Single photo requested");
         // Single photo requested
         isCapturingPhotos = false;
+        uint8_t controlValue = 0;
+        photoControlCharacteristic->setValue(&controlValue, 1);
+        photoControlCharacteristic->notify();
       }
 
       // Take the photo
       if (take_photo())
       {
+        Serial.println("Photo taken. Prepare to send...");
         photoDataUploading = true;
         sent_photo_bytes = 0;
         sent_photo_frames = 0;
@@ -487,6 +495,7 @@ void loop() {
 
   // Push to BLE
   if (photoDataUploading) {
+    Serial.println("Push photo data to BLE...");
     size_t remaining = fb->len - sent_photo_bytes;
     if (remaining > 0) {
       // Populate buffer
@@ -499,24 +508,25 @@ void loop() {
       memcpy(&s_compressed_frame_2[2], &fb->buf[sent_photo_bytes], bytes_to_copy);
 
       // Push to BLE
-      photoData->setValue(s_compressed_frame_2, bytes_to_copy + 2);
-      photoData->notify();
+      photoDataCharacteristic->setValue(s_compressed_frame_2, bytes_to_copy + 2);
+      photoDataCharacteristic->notify();
       sent_photo_bytes += bytes_to_copy;
       sent_photo_frames++;
     } else {
-
       // End flag
       s_compressed_frame_2[0] = 0xFF;
       s_compressed_frame_2[1] = 0xFF;
-      photoData->setValue(s_compressed_frame_2, 2);
-      photoData->notify();
+      photoDataCharacteristic->setValue(s_compressed_frame_2, 2);
+      photoDataCharacteristic->notify();
 
       Serial.println("Photo sent");
       photoDataUploading = false;
     }
   }
 
-  if (millis() - lastBatteryUpdate > 60000)
+  Serial.println("Update battery level...");
+  // Update battery level
+  if (now - lastBatteryUpdate > 60000)
   {
     updateBatteryLevel();
     lastBatteryUpdate = millis();

@@ -102,14 +102,11 @@ class ServerHandler : public BLEServerCallbacks
   void onConnect(BLEServer *server)
   {
     connected = true;
-    Serial.println("Connected");
   }
 
   void onDisconnect(BLEServer *server)
   {
     connected = false;
-    Serial.println("Disconnected");
-    BLEDevice::startAdvertising();
   }
 };
 
@@ -166,17 +163,14 @@ void configure_ble() {
 
   BLECharacteristic *photoControlCharacteristic = service->createCharacteristic(
       photoControlUUID,
-      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_WRITE);
-  ccc = new BLE2902();
-  ccc->setNotifications(true);
-  photoControlCharacteristic->addDescriptor(ccc);
+      BLECharacteristic::PROPERTY_WRITE);
   photoControlCharacteristic->setCallbacks(new PhotoControlCallback());
   uint8_t controlValue = 0;
   photoControlCharacteristic->setValue(&controlValue, 1);
 
-      // Device Information Service
+  // Device Information Service
 
-      BLEService *deviceInfoService = server->createService(DEVICE_INFORMATION_SERVICE_UUID);
+  BLEService *deviceInfoService = server->createService(DEVICE_INFORMATION_SERVICE_UUID);
   BLECharacteristic *manufacturerNameCharacteristic = deviceInfoService->createCharacteristic(
       MANUFACTURER_NAME_STRING_CHAR_UUID,
       BLECharacteristic::PROPERTY_READ);
@@ -227,12 +221,10 @@ camera_fb_t *fb;
 bool take_photo() {
   // Release buffer
   if (fb) {
-    Serial.println("Release FB");
     esp_camera_fb_return(fb);
   }
 
   // Take a photo
-  Serial.println("Taking photo...");
   fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("Failed to get camera frame buffer");
@@ -381,8 +373,6 @@ void updateBatteryLevel()
 void setup() {
   Serial.begin(921600);
   // SD.begin(21);
-  Serial.println("Setup");
-  Serial.println("Starting BLE...");
   configure_ble();
   // s_compressed_frame_2 = (uint8_t *) ps_calloc(compressed_buffer_size, sizeof(uint8_t));
 #ifdef CODEC_OPUS
@@ -396,23 +386,15 @@ void setup() {
   }
   opus_encoder_ctl(opus_encoder, OPUS_SET_BITRATE(OPUS_BITRATE));
 #endif
-  Serial.println("Starting Microphone...");
   configure_microphone();
-  Serial.println("Starting Camera...");
   configure_camera();
-  Serial.println("OK");
 }
 
 void loop() {
-
-  Serial.println("Loop");
-
-  Serial.println("Read microphone...");
   // Read from mic
   size_t bytes_recorded = read_microphone();
 
-  Serial.println("Push audio data to BLE...");
-  // Push to BLE
+  // Push audio to BLE
   if (bytes_recorded > 0 && connected)
   {
 #ifdef CODEC_OPUS
@@ -460,31 +442,23 @@ void loop() {
 #endif
   }
 
-  Serial.println("Check photo capture...");
   // Take a photo
   unsigned long now = millis();
 
   // Don't take a photo if we are already sending data for previous photo
   if (isCapturingPhotos && !photoDataUploading && connected)
   {
-    Serial.println("Taking photo...");
     if ((captureInterval == 0)
       || ((now - lastCaptureTime) >= captureInterval))
     {
-      Serial.println("Capture interval reached");
       if (captureInterval == 0) {
-        Serial.println("Single photo requested");
         // Single photo requested
         isCapturingPhotos = false;
-        uint8_t controlValue = 0;
-        photoControlCharacteristic->setValue(&controlValue, 1);
-        photoControlCharacteristic->notify();
       }
 
       // Take the photo
       if (take_photo())
       {
-        Serial.println("Photo taken. Prepare to send...");
         photoDataUploading = true;
         sent_photo_bytes = 0;
         sent_photo_frames = 0;
@@ -493,9 +467,8 @@ void loop() {
     }
   }
 
-  // Push to BLE
+  // Push photo data to BLE
   if (photoDataUploading) {
-    Serial.println("Push photo data to BLE...");
     size_t remaining = fb->len - sent_photo_bytes;
     if (remaining > 0) {
       // Populate buffer
@@ -519,12 +492,10 @@ void loop() {
       photoDataCharacteristic->setValue(s_compressed_frame_2, 2);
       photoDataCharacteristic->notify();
 
-      Serial.println("Photo sent");
       photoDataUploading = false;
     }
   }
 
-  Serial.println("Update battery level...");
   // Update battery level
   if (now - lastBatteryUpdate > 60000)
   {

@@ -16,6 +16,9 @@
 // Mulaw is used with the web app
 // PCM is used with the Friend app
 
+// To use with the web app, comment CODEC_PCM and
+// uncomment CODEC_MULAW
+
 // #define CODEC_OPUS
 // #define CODEC_MULAW
 #define CODEC_PCM
@@ -85,8 +88,8 @@ bool connected = false;
 uint16_t audio_frame_count = 0;
 
 bool isCapturingPhotos = false;
-unsigned long lastCaptureTime = 0;
 int captureInterval = 0;
+unsigned long lastCaptureTime = 0;
 
 size_t sent_photo_bytes = 0;
 size_t sent_photo_frames = 0;

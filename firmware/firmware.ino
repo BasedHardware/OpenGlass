@@ -107,6 +107,7 @@ class ServerHandler : public BLEServerCallbacks
   void onDisconnect(BLEServer *server)
   {
     connected = false;
+    BLEDevice::startAdvertising();
   }
 };
 

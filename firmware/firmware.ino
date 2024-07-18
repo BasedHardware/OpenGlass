@@ -508,5 +508,5 @@ void loop() {
   }
 
   // Delay
-  delay(4);
+  delay(20);
 }

@@ -67,6 +67,9 @@ function usePhotos(device: BluetoothRemoteGATTServer) {
                     onChunk(packetId, packet);
                 }
             });
+            // Start automatic photo capture every 5s
+            const photoControlCharacteristic = await service.getCharacteristic('19b10006-e8f2-537e-4f6c-d104768a1214');
+            await photoControlCharacteristic.writeValue(new Uint8Array([0x05]));
         })();
     }, []);
 

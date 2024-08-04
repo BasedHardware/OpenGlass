@@ -20,8 +20,8 @@
 // uncomment CODEC_MULAW
 
 // #define CODEC_OPUS
-// #define CODEC_MULAW
-#define CODEC_PCM
+#define CODEC_MULAW
+// #define CODEC_PCM
 
 #ifdef CODEC_OPUS
 
@@ -125,7 +125,8 @@ class PhotoControlCallback : public BLECharacteristicCallbacks
   }
 };
 
-void configure_ble() {
+void configure_ble()
+{
   BLEDevice::init("OpenGlass");
   BLEServer *server = BLEDevice::createServer();
 
@@ -135,16 +136,15 @@ void configure_ble() {
 
   // Audio characteristics
   audioDataCharacteristic = service->createCharacteristic(
-    audioDataUUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
-  );
+      audioDataUUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
   BLE2902 *ccc = new BLE2902();
   ccc->setNotifications(true);
   audioDataCharacteristic->addDescriptor(ccc);
 
   BLECharacteristic *audioCodecCharacteristic = service->createCharacteristic(
-    audioCodecUUID,
-    BLECharacteristic::PROPERTY_READ);
+      audioCodecUUID,
+      BLECharacteristic::PROPERTY_READ);
 #ifdef CODEC_OPUS
   uint8_t codecId = 20; // Opus 16khz
 #else
@@ -222,15 +222,18 @@ void configure_ble() {
 
 camera_fb_t *fb;
 
-bool take_photo() {
+bool take_photo()
+{
   // Release buffer
-  if (fb) {
+  if (fb)
+  {
     esp_camera_fb_return(fb);
   }
 
   // Take a photo
   fb = esp_camera_fb_get();
-  if (!fb) {
+  if (!fb)
+  {
     Serial.println("Failed to get camera frame buffer");
     return false;
   }
@@ -280,7 +283,7 @@ static size_t compressed_buffer_size = 400 + 3; /* header */
 
 #else
 
-static size_t recording_buffer_size = FRAME_SIZE * 2; // 16-bit samples
+static size_t recording_buffer_size = FRAME_SIZE * 2;             // 16-bit samples
 static size_t compressed_buffer_size = recording_buffer_size + 3; /* header */
 #define VOLUME_GAIN 2
 
@@ -291,22 +294,26 @@ static uint8_t *s_recording_buffer = nullptr;
 static uint8_t *s_compressed_frame = nullptr;
 static uint8_t *s_compressed_frame_2 = nullptr;
 
-void configure_microphone() {
+void configure_microphone()
+{
 
   // start I2S at 16 kHz with 16-bits per sample
   I2S.setAllPins(-1, 42, 41, -1, -1);
-  if (!I2S.begin(PDM_MONO_MODE, SAMPLE_RATE, SAMPLE_BITS)) {
+  if (!I2S.begin(PDM_MONO_MODE, SAMPLE_RATE, SAMPLE_BITS))
+  {
     Serial.println("Failed to initialize I2S!");
-    while (1); // do nothing
+    while (1)
+      ; // do nothing
   }
 
   // Allocate buffers
-  s_recording_buffer = (uint8_t *) ps_calloc(recording_buffer_size, sizeof(uint8_t));
-  s_compressed_frame = (uint8_t *) ps_calloc(compressed_buffer_size, sizeof(uint8_t));
-  s_compressed_frame_2 = (uint8_t *) ps_calloc(compressed_buffer_size, sizeof(uint8_t));
+  s_recording_buffer = (uint8_t *)ps_calloc(recording_buffer_size, sizeof(uint8_t));
+  s_compressed_frame = (uint8_t *)ps_calloc(compressed_buffer_size, sizeof(uint8_t));
+  s_compressed_frame_2 = (uint8_t *)ps_calloc(compressed_buffer_size, sizeof(uint8_t));
 }
 
-size_t read_microphone() {
+size_t read_microphone()
+{
   size_t bytes_recorded = 0;
   esp_i2s::i2s_read(esp_i2s::I2S_NUM_0, s_recording_buffer, recording_buffer_size, &bytes_recorded, portMAX_DELAY);
   return bytes_recorded;
@@ -316,7 +323,8 @@ size_t read_microphone() {
 // Camera
 //
 
-void configure_camera() {
+void configure_camera()
+{
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -355,7 +363,8 @@ void configure_camera() {
 
   // camera init
   esp_err_t err = esp_camera_init(&config);
-  if (err != ESP_OK) {
+  if (err != ESP_OK)
+  {
     Serial.printf("Camera init failed with error 0x%x", err);
     return;
   }
@@ -374,7 +383,8 @@ void updateBatteryLevel()
 
 // static uint8_t *s_compressed_frame_2 = nullptr;
 // static size_t compressed_buffer_size = 400 + 3;
-void setup() {
+void setup()
+{
   Serial.begin(921600);
   // SD.begin(21);
   configure_ble();
@@ -394,7 +404,8 @@ void setup() {
   configure_camera();
 }
 
-void loop() {
+void loop()
+{
   // Read from mic
   size_t bytes_recorded = read_microphone();
 
@@ -425,22 +436,22 @@ void loop() {
     for (size_t i = 0; i < bytes_recorded / 4; i++)
     {
       int16_t sample = ((int16_t *)s_recording_buffer)[i * 2] << VOLUME_GAIN; // Read every other 16-bit sample
-      s_compressed_frame[i * 2 + 3] = sample & 0xFF;           // Low byte
-      s_compressed_frame[i * 2 + 4] = (sample >> 8) & 0xFF;    // High byte
+      s_compressed_frame[i * 2 + 3] = sample & 0xFF;                          // Low byte
+      s_compressed_frame[i * 2 + 4] = (sample >> 8) & 0xFF;                   // High byte
     }
 
     int encoded_bytes = bytes_recorded / 2;
 #endif
 #endif
 
-    s_compressed_frame[0] = audio_frame_count & 0xFF;
-    s_compressed_frame[1] = (audio_frame_count >> 8) & 0xFF;
-    s_compressed_frame[2] = 0;
+      s_compressed_frame[0] = audio_frame_count & 0xFF;
+      s_compressed_frame[1] = (audio_frame_count >> 8) & 0xFF;
+      s_compressed_frame[2] = 0;
 
-    size_t out_buffer_size = encoded_bytes + 3;
-    audioDataCharacteristic->setValue(s_compressed_frame, out_buffer_size);
-    audioDataCharacteristic->notify();
-    audio_frame_count++;
+      size_t out_buffer_size = encoded_bytes + 3;
+      audioDataCharacteristic->setValue(s_compressed_frame, out_buffer_size);
+      audioDataCharacteristic->notify();
+      audio_frame_count++;
 #ifdef CODEC_OPUS
     }
 #endif
@@ -452,10 +463,10 @@ void loop() {
   // Don't take a photo if we are already sending data for previous photo
   if (isCapturingPhotos && !photoDataUploading && connected)
   {
-    if ((captureInterval == 0)
-      || ((now - lastCaptureTime) >= captureInterval))
+    if ((captureInterval == 0) || ((now - lastCaptureTime) >= captureInterval))
     {
-      if (captureInterval == 0) {
+      if (captureInterval == 0)
+      {
         // Single photo requested
         isCapturingPhotos = false;
       }
@@ -472,14 +483,17 @@ void loop() {
   }
 
   // Push photo data to BLE
-  if (photoDataUploading) {
+  if (photoDataUploading)
+  {
     size_t remaining = fb->len - sent_photo_bytes;
-    if (remaining > 0) {
+    if (remaining > 0)
+    {
       // Populate buffer
       s_compressed_frame_2[0] = sent_photo_frames & 0xFF;
       s_compressed_frame_2[1] = (sent_photo_frames >> 8) & 0xFF;
       size_t bytes_to_copy = remaining;
-      if (bytes_to_copy > 200) {
+      if (bytes_to_copy > 200)
+      {
         bytes_to_copy = 200;
       }
       memcpy(&s_compressed_frame_2[2], &fb->buf[sent_photo_bytes], bytes_to_copy);
@@ -489,7 +503,9 @@ void loop() {
       photoDataCharacteristic->notify();
       sent_photo_bytes += bytes_to_copy;
       sent_photo_frames++;
-    } else {
+    }
+    else
+    {
       // End flag
       s_compressed_frame_2[0] = 0xFF;
       s_compressed_frame_2[1] = 0xFF;

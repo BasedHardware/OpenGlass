@@ -1,3 +1,5 @@
+## [ We are moving this project to Friend repository =>](https://github.com/BasedHardware/Friend)
+
 # OpenGlass - Open Source Smart Glasses
 
 Turn any glasses into hackable smart glasses with less than $25 of off-the-shelf components. Record your life, remember people you meet, identify objects, translate text, and more.

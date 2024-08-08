@@ -1,4 +1,4 @@
-## [ We are moving this project to Friend repository =>](https://github.com/BasedHardware/Friend)
+## [ℹ️ 🔴 We moved this project to Omi repository. Current repo isn't supported anymore =>](https://github.com/BasedHardware/Omi)
 
 # OpenGlass - Open Source Smart Glasses
 
@@ -84,3 +84,5 @@ Follow these steps to set up OpenGlass:
 ## License
 
 This project is licensed under the MIT License.
+
+## [ℹ️ 🔴 We moved this project to Omi repository. Current repo isn't supported anymore =>](https://github.com/BasedHardware/Omi)

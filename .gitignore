@@ -4,3 +4,4 @@ dist
 .expo
 .env
 .vscode
+sources/keys.ts

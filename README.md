@@ -1,4 +1,4 @@
-## ℹ️ 🔴 We moved this project to [Omi repository](https://github.com/BasedHardware/Omi). Current repo isn't supported anymore =>
+## ℹ️ 🔴 We moved this project to [Omi repository](https://github.com/BasedHardware/omi/tree/main/omiGlass). Current repo isn't supported anymore =>
 
 # OpenGlass - Open Source Smart Glasses
 
